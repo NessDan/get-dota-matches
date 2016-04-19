@@ -1,17 +1,14 @@
 var fs = require('fs');
 var Dota2Api = require('dota2-api');
-var dota = Dota2Api.create('960A12EECBBFD5E09B15986AFA0B790F');
+var dota = Dota2Api.create('2FFF98576606C11E321D69E4DB4BF2DA');
 var globalOptions = {
-	// howMany: 14000, // how many matches to grab
-	// how many matches to grab
-	howMany: 250,
+	restartTime: 1.5 * 1000 * 60, // First number is how many minutes. The rest converts it to ms.
 	// very high skill
 	maxSkillLevel: 3,
 	// Game Modes: https://github.com/joshuaduffy/dota2api/blob/master/dota2api/ref/modes.json
 	// all-pick and captains mode / draft (and all pick again?)
 	gameModes: [1, 2, 16, 22]
 };
-var soFar = 0; // how many matches we've collected so far
 
 function isValidMatch(match) {
 	// Public matchmaking
@@ -62,7 +59,22 @@ function getDetailsForMatch(matchSummary) {
 			if (isValidMatch(match)) {
 				fs.appendFileSync("./match-ids.txt", match.match_id + "\r\n");
 			}
-		} catch(e) {}
+		} catch(e) {
+			if (response.indexOf('Access Denied') != -1) {
+				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
+
+				setTimeout(function() {
+					getMatchHistory(null, recursiveMatchHistory);
+				}, globalOptions.restartTime);
+
+				// Cancel if we are denied access.
+				// return;
+			} else {
+				// console.error('detail error, retrying. ' + e);
+				getDetailsForMatch(matchSummary);
+			}
+
+		}
 	});
 }
 
@@ -78,40 +90,62 @@ function getMatchHistory(startId, cb) {
 		skill: globalOptions.maxSkillLevel
 	};
 
-	dota.getMatchHistory(options, function(err, result) {
+	dota.getMatchHistory(options, function(err, response) {
 		if (err) {
 			console.error(err);
 		}
 
 		try {
-			var matchHistory = JSON.parse(result).result;
+			var matchHistory = JSON.parse(response).result;
 
 			cb(matchHistory);
-		} catch (e) {
-			getMatchHistory(startId, cb);
 
+		} catch (e) {
+			if (response.indexOf('Access Denied') != -1) {
+				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
+
+				setTimeout(function() {
+					getMatchHistory(null, recursiveMatchHistory);
+				}, globalOptions.restartTime);
+
+				// Cancel if we are denied access.
+				// return;
+			}
+
+			getMatchHistory(startId, cb);
 		}
 	});
 }
 
-function getMatches(howMany) {
+function getMatches() {
 	function recursiveMatchHistory(matchHistory) {
 		// Get the last returned match and subtract one to pick up from.
 		var startId = matchHistory.matches[matchHistory.matches.length - 1].match_id - 1;
 		getDetailsForMatches(matchHistory.matches);
-		soFar += matchHistory.num_results;
 
-		if (soFar < howMany) {
+		// keep grabbing results until there's nothing to grab.
+		if (matchHistory.results_remaining > 0) {
+			console.log('match history remaining: ' + matchHistory.results_remaining);
 			getMatchHistory(startId, recursiveMatchHistory);
+		} else {
+			console.log('all done for match history. restarting in ' + globalOptions.restartTime / 1000 / 60 + ' min');
+
+			setTimeout(function() {
+				getMatchHistory(null, recursiveMatchHistory);
+			}, globalOptions.restartTime);
 		}
 	}
 
 	getMatchHistory(null, recursiveMatchHistory);
 }
 
+function cleanUp() {
+	// fs.writeFileSync("./match-ids.txt", ""); // clear the match ids
+}
+
 function start() {
-	fs.writeFileSync("./match-ids.txt", ""); // clear the match ids
-	getMatches(globalOptions.howMany);
+	cleanUp();
+	getMatches();
 }
 
 start();
