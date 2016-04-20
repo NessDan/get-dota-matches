@@ -105,7 +105,7 @@ function getMatchHistory(startId, cb) {
 				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
 
 				setTimeout(function() {
-					getMatchHistory(null, recursiveMatchHistory);
+					getMatchHistory(null, cb);
 				}, globalOptions.restartTime);
 
 				// Cancel if we are denied access.
