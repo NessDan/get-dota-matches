@@ -85,12 +85,12 @@ function getDetailsForMatches(matches) {
 	function recursiveGetDetailsForMatch() {
 		i++;
 
-		if (matches[i] && matches[i].length) {
+		if (matches[i]) {
 			getDetailsForMatch(matches[i], recursiveGetDetailsForMatch);
 		}
 	}
 
-	if (matches[i] && matches[i].length) {
+	if (matches[i]) {
 		getDetailsForMatch(matches[i], recursiveGetDetailsForMatch);
 	}
 }
