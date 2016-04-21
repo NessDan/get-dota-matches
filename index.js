@@ -1,8 +1,8 @@
 var fs = require('fs');
 var Dota2Api = require('dota2-api');
-var dota = Dota2Api.create('2FFF98576606C11E321D69E4DB4BF2DA');
+var dota = Dota2Api.create(process.env.STEAM_API_KEY);
 var globalOptions = {
-	restartTime: 1.5 * 1000 * 60, // First number is how many minutes. The rest converts it to ms.
+	restartTime: 3.2 * 1000 * 60, // First number is how many minutes. The rest converts it to ms.
 	// very high skill
 	maxSkillLevel: 3,
 	// Game Modes: https://github.com/joshuaduffy/dota2api/blob/master/dota2api/ref/modes.json
@@ -59,8 +59,8 @@ function getDetailsForMatch(matchSummary) {
 			if (isValidMatch(match)) {
 				fs.appendFileSync("./match-ids.txt", match.match_id + "\r\n");
 			}
-		} catch(e) {
-			if (response.indexOf('Access Denied') != -1) {
+		} catch (e) {
+			if (response && response.indexOf('Access Denied') != -1) {
 				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
 
 				setTimeout(function() {
@@ -101,7 +101,7 @@ function getMatchHistory(startId, cb) {
 			cb(matchHistory);
 
 		} catch (e) {
-			if (response.indexOf('Access Denied') != -1) {
+			if (response && response.indexOf('Access Denied') != -1) {
 				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
 
 				setTimeout(function() {
