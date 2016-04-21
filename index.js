@@ -42,7 +42,7 @@ function isValidMatch(match) {
 	return true;
 }
 
-function getDetailsForMatch(matchSummary) {
+function getDetailsForMatch(matchSummary, cb) {
 	var options = {
 		match_id: matchSummary.match_id
 	};
@@ -59,28 +59,39 @@ function getDetailsForMatch(matchSummary) {
 			if (isValidMatch(match)) {
 				fs.appendFileSync("./match-ids.txt", match.match_id + "\r\n");
 			}
+
+			cb();
 		} catch (e) {
 			if (response && response.indexOf('Access Denied') != -1) {
 				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
 
 				setTimeout(function() {
-					getDetailsForMatch(matchSummary);
+					getDetailsForMatch(matchSummary, cb);
 				}, globalOptions.restartTime);
 
 				// Cancel if we are denied access.
 				// return;
 			} else {
 				// console.error('detail error, retrying. ' + e);
-				getDetailsForMatch(matchSummary);
+				getDetailsForMatch(matchSummary, cb);
 			}
-
 		}
 	});
 }
 
 function getDetailsForMatches(matches) {
-	for (var i = 0; i < matches.length; i++) {
-		getDetailsForMatch(matches[i]);
+	var i = 0;
+
+	function recursiveGetDetailsForMatch() {
+		i++;
+
+		if (matches[i] && matches[i].length) {
+			getDetailsForMatch(matches[i], recursiveGetDetailsForMatch);
+		}
+	}
+
+	if (matches[i] && matches[i].length) {
+		getDetailsForMatch(matches[i], recursiveGetDetailsForMatch);
 	}
 }
 
