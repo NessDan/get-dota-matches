@@ -53,7 +53,7 @@ function getDetailsForMatch(matchSummary, cb) {
 		}
 
 		try {
-			var result = JSON.parse(response)
+			var result = JSON.parse(response);
 			var match = result.result;
 
 			if (isValidMatch(match)) {
