@@ -62,7 +62,8 @@ function getDetailsForMatch(matchSummary, cb) {
 
 			cb();
 		} catch (e) {
-			if (response && response.indexOf('Access Denied') != -1) {
+			// If we've failed don't try anything, we'll just wait for next round of matches.
+			/*if (response && response.indexOf('Access Denied') != -1) {
 				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
 
 				setTimeout(function() {
@@ -74,7 +75,7 @@ function getDetailsForMatch(matchSummary, cb) {
 			} else {
 				// console.error('detail error, retrying. ' + e);
 				getDetailsForMatch(matchSummary, cb);
-			}
+			}*/
 		}
 	});
 }
@@ -114,16 +115,11 @@ function getMatchHistory(startId, cb) {
 		} catch (e) {
 			if (response && response.indexOf('Access Denied') != -1) {
 				console.error('access denied. trying again in ' + globalOptions.restartTime / 1000 / 60 + ' min');
-
-				setTimeout(function() {
-					getMatchHistory(null, cb);
-				}, globalOptions.restartTime);
-
 				// Cancel if we are denied access.
-				// return;
+				return;
+			} else {
+				getMatchHistory(null, cb);
 			}
-
-			getMatchHistory(startId, cb);
 		}
 	});
 }
